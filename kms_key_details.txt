@@ -1,0 +1,1 @@
+{"arn":"arn:aws:kms:us-east-1:381485378882:key/mrk-9b7b25c0de3242de865f5960beae98d9","key_id":"mrk-9b7b25c0de3242de865f5960beae98d9"}
