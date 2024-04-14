@@ -3,5 +3,5 @@
 terraform.tfstate
 terraform.tfstate.backup
 terraform.tfvars
-terraform.lock.hcl
-
+.terraform.lock.hcl
+kms_key_details.txt
