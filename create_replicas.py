@@ -1,8 +1,9 @@
+
 import boto3
 import json 
 
 
-def read_arn_from_file(filename):
+def read_key_id_from_file(filename):
     """Reads the primary CMK ARN from a JSON file.
 
     Args:
@@ -14,10 +15,10 @@ def read_arn_from_file(filename):
 
     with open(filename, 'r') as file:
         data = json.load(file)
-        return data['arn']
-    print(arn)
+        return data['key_id']
+    print(key_id)
 
-def create_replica_key(region, primary_cmk_arn):
+def create_replica_key(region, primary_key_id):
     """Creates a replica KMS key in the specified region.
 
     Args:
@@ -29,11 +30,11 @@ def create_replica_key(region, primary_cmk_arn):
     """
 
     client = boto3.client('kms', region_name=region)
-    response = client.create_key(
-        Description='Replica of ' + primary_cmk_arn,
-        Origin='AWS_KMS',
-        KeySpec='SYMMETRIC_DEFAULT', 
-        KeyUsage='ENCRYPT_DECRYPT',
+    print(f"Creating replica key in {region}...")
+    response = client.replicate_key(
+        Description='Replica of ' + primary_key_id,
+        KeyId=primary_key_id,
+        ReplicaRegion=region, 
         # Policy='arn:aws:kms:::aws:servicepolicy/AWSKeyManagementServicePowerUser', # Adjust policy as needed
         Tags=[
             {'TagKey': 'Name', 'TagValue': 'my-replica-cmk'} 
@@ -44,7 +45,7 @@ def create_replica_key(region, primary_cmk_arn):
     print(f"Replica Key ID: {key_id}")
 
     # Add alias (assuming you want a consistent alias across replicas)
-    alias_name = "alias/my-replica-cmk-alias" 
+    alias_name = "alias/my-replica-cmk-alias2" 
     client.create_alias(
         AliasName=alias_name,
         TargetKeyId=response['KeyMetadata']['KeyId'] 
@@ -52,16 +53,17 @@ def create_replica_key(region, primary_cmk_arn):
 
     # Enable rotation and schedule deletion
     client.enable_key_rotation(KeyId=key_id)
-    client.schedule_key_deletion(KeyId=key_id, DeletionWindowInDays=7)
+    # client.schedule_key_deletion(KeyId=key_id, DeletionWindowInDays=7)
 
     return response['KeyMetadata']['Arn']
 
 if __name__ == '__main__':
     filename = 'kms_key_details.txt'  # Adjust if your file has a different name
-    primary_cmk_arn = read_arn_from_file(filename)
-    print(f"Primary Key ARN: {primary_cmk_arn}")
+    primary_key_id = read_key_id_from_file(filename)
+    print(f"Primary Key Id: {primary_key_id}")
     regions = ['us-west-2', 'us-east-2'] 
 
     for region in regions:
-        replica_arn = create_replica_key(region, primary_cmk_arn)
-        print(f"Replica Key created in {region}: {replica_arn}")
+        print(primary_key_id)
+        replica_key_id = create_replica_key(region, primary_key_id)
+        print(f"Replica Key created in {region}: {replica_key_id}")
